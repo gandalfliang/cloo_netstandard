@@ -21,8 +21,9 @@ namespace demo
                 }
             }
 
-            var matrixmul=new MatrixMultiple(1000);
+            var matrixmul=new MatrixMultiple(500);
             matrixmul.RegularMul();
+            matrixmul.OpenClMul();
             System.Console.WriteLine("done");
         }
     }

@@ -45,7 +45,7 @@ namespace Cloo.Bindings
         /// <summary>
         /// The name of the library that contains the available OpenCL function points.
         /// </summary>
-        protected const string libName = "libOpenCL.so";
+        protected const string libName = "OpenCl.dll";
 
         /// <summary>
         /// See the OpenCL specification.
