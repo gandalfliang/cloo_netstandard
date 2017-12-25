@@ -20,6 +20,10 @@ namespace demo
                     Console.WriteLine($"    Device:{device.Name}");
                 }
             }
+
+            var matrixmul=new MatrixMultiple(1000);
+            matrixmul.RegularMul();
+            System.Console.WriteLine("done");
         }
     }
 }
