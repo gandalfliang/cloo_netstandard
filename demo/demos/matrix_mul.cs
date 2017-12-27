@@ -60,7 +60,7 @@ namespace demo
             var program = new ComputeProgram(context, code);
             try
             {
-                program.Build(null, null, null, IntPtr.Zero);
+                program.Build(new []{device}, null, null, IntPtr.Zero);
             }
             catch (Exception ex)
             {
