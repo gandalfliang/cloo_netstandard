@@ -1,6 +1,5 @@
 ﻿using System;
 using Cloo;
-using demo.demos;
 
 namespace demo
 {
@@ -22,13 +21,11 @@ namespace demo
                 }
             }
 
-//            var matrixmul=new MatrixMultiple(500);
-//            matrixmul.RegularMul();
-//            matrixmul.OpenClMul();
-//            System.Console.WriteLine("done");
+            var matrixmul=new MatrixMultiple(500);
+            matrixmul.RegularMul();
+            matrixmul.OpenClMul();
+            System.Console.WriteLine("done");
 
-            var gau = new Gaussianblur(1.5f, 1);
-            gau.Compute_cl(@"");
         }
     }
 }

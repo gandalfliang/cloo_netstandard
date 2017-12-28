@@ -16,6 +16,14 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Documents", "Documents", "{
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "demo", "demo\demo.csproj", "{C5B41A2C-FE22-49CC-AF98-9BB4A4EDE6E2}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "demo.netframework", "demo.netframework\demo.netframework.csproj", "{FAB59152-23F8-4751-8018-20432076C53D}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "CLS", "CLS", "{2A7E8599-B736-49F2-9F15-F6159F71371E}"
+	ProjectSection(SolutionItems) = preProject
+		demo\demos\cls\gaussianblur.cl = demo\demos\cls\gaussianblur.cl
+		demo\demos\cls\matrix_mul.cl = demo\demos\cls\matrix_mul.cl
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -30,6 +38,10 @@ Global
 		{C5B41A2C-FE22-49CC-AF98-9BB4A4EDE6E2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C5B41A2C-FE22-49CC-AF98-9BB4A4EDE6E2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C5B41A2C-FE22-49CC-AF98-9BB4A4EDE6E2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FAB59152-23F8-4751-8018-20432076C53D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FAB59152-23F8-4751-8018-20432076C53D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FAB59152-23F8-4751-8018-20432076C53D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FAB59152-23F8-4751-8018-20432076C53D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -1,0 +1,167 @@
+﻿/*
+ * gaussian function:
+ * https://zh.wikipedia.org/wiki/%E9%AB%98%E6%96%AF%E6%A8%A1%E7%B3%8A
+ */
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Drawing;
+using System.Drawing.Imaging;
+using System.IO;
+using System.Linq;
+using System.Runtime.InteropServices;
+using System.Text;
+using Cloo;
+using Cloo.Bindings;
+
+namespace demo.demos
+{
+    public class Gaussianblur
+    {
+        private int[] dstBytes;
+        private float[] _matrix;
+        public float Variance { get; }
+        public int Radius { get; }
+
+        public Gaussianblur(float variance,int radius)
+        {
+            if(variance<0||radius==0)
+                throw new ArgumentException();
+
+            Variance = variance;
+            Radius = radius;
+            var width = radius * 2 + 1;
+            _matrix=new float[width*width];
+            ComputeWeightMatrix();
+        }
+
+        public void Compute(string imageFile)
+        {
+        }
+
+        public void Compute_cl(string imageFile)
+        {
+            //选取设备
+            var platform = ComputePlatform.Platforms.FirstOrDefault();
+            var device = platform.Devices.FirstOrDefault();
+            //设置相关上下文
+            var properties = new ComputeContextPropertyList(platform);
+            var context = new ComputeContext(new[] {device}, properties, null, IntPtr.Zero);
+            //命令队列，用于控制执行的代码
+            ComputeCommandQueue commands = new ComputeCommandQueue(context, context.Devices[0],
+                ComputeCommandQueueFlags.None);
+            //读取opencl代码
+            var code = File.ReadAllText(@"gaussianblur.cl");
+            //编译
+            var program = new ComputeProgram(context, code);
+            try
+            {
+                program.Build(new[] {device}, null, null, IntPtr.Zero);
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
+
+            var images = CreateImageFromBitmap(imageFile, context,
+                ComputeMemoryFlags.ReadWrite | ComputeMemoryFlags.CopyHostPointer);
+
+            //创建核心代码，就是cl代码中以kernel标识，函数签名为MatrixMul的函数
+            var kernel = program.CreateKernel("gaussian_blur");
+            //矩阵规模
+            //储存计算结果的数组
+           
+            //创建的核心代码函数以这种方式来传参
+            var resultBuffer=new ComputeBuffer<int>(context,ComputeMemoryFlags.WriteOnly, dstBytes.Length);
+            kernel.SetMemoryArgument(0, images);
+            kernel.SetMemoryArgument(1, resultBuffer);
+            kernel.SetMemoryArgument(2, new ComputeBuffer<float>(context,ComputeMemoryFlags.ReadOnly|ComputeMemoryFlags.CopyHostPointer,_matrix));
+            kernel.SetValueArgument(3, Radius);
+            kernel.SetValueArgument(4, (int)images.Width);
+            Console.WriteLine($"运行平台: {platform.Name}\n运行设备： {device.Name}\n");
+            Stopwatch sw = Stopwatch.StartNew();
+            var climg = images;
+
+            //执行代码
+            long rank = climg.Width*climg.Height;
+            commands.Execute(kernel, null, new long[] {climg.Width, climg.Height}, null, null);
+           
+            //read data
+            
+            int[] resultArray = new int[dstBytes.Length];
+            var arrHandle = GCHandle.Alloc(resultArray, GCHandleType.Pinned);
+            commands.Read(resultBuffer, true, 0, dstBytes.Length, arrHandle.AddrOfPinnedObject(), null);
+            //commands.ReadFromImage(images.Item2, processeddata.Scan0, true, null);
+            var bytes = new byte[resultArray.Length];
+            for (int i = 0; i < resultArray.Length; i++)
+            {
+                bytes[i] = (byte)resultArray[i];
+            }
+            var resultHandle = GCHandle.Alloc(bytes, GCHandleType.Pinned);
+            var bmp=new Bitmap(climg.Width,climg.Height, climg.Width*4, PixelFormat.Format32bppArgb, resultHandle.AddrOfPinnedObject());
+            var elapsed = sw.Elapsed;
+            Console.WriteLine($"耗时: {elapsed.TotalMilliseconds} ms\n");
+            kernel.Dispose();
+
+            bmp.Save("prcessed.bmp");
+        }
+
+        private void ComputeWeightMatrix()
+        {
+            var center = Radius;
+            var conBase = 2 * Math.Pow(Variance, 2);
+            var conRoot = 1 / (Math.PI * conBase);
+
+            float sum = 0f;
+            for (int x = -Radius; x <= Radius; x++)
+            {
+                for (int y = Radius; y >= -Radius; y--)
+                {
+                    var weight = conRoot * Math.Pow(Math.E, -(x * x + y * y) / conBase);
+                    _matrix[GridPosToArrayIndex(x, y, center, Radius)] = (float)weight;
+                    sum += (float)weight;
+                }
+            }
+            for (int i = 0; i < _matrix.Length; i++)
+            {
+                _matrix[i] /= sum;
+            }
+        }
+
+        private int GridPosToArrayIndex(int x, int y,int center,int radius)
+        {
+            var width = radius * 2 + 1;
+            return Math.Abs(y - center) * width + (x + center);
+        }
+
+        private ComputeImage2D CreateImageFromBitmap(string file,ComputeContext ctx,ComputeMemoryFlags flags)
+        {
+            if (!File.Exists(file))
+                throw new FileNotFoundException();
+
+            unsafe
+            {
+                var bitmap = new Bitmap(file);
+                if (bitmap.PixelFormat != PixelFormat.Format32bppArgb)
+                    throw new ArgumentException("Pixel format not supported.");
+
+                //ComputeImageFormat format = Tools.ConvertImageFormat(bitmap.PixelFormat);
+                ComputeImageFormat format = new ComputeImageFormat(ComputeImageChannelOrder.Rgba, ComputeImageChannelType.UnsignedInt8);
+                BitmapData bitmapData = bitmap.LockBits(new Rectangle(new Point(), bitmap.Size), ImageLockMode.ReadWrite, bitmap.PixelFormat);
+                ComputeImage2D image;
+                ComputeImage2D dst;
+                try
+                {
+                    image = new ComputeImage2D(ctx, flags, format, bitmapData.Width, bitmapData.Height,
+                        bitmapData.Stride, bitmapData.Scan0);
+                    dstBytes = new int[bitmapData.Width*bitmapData.Height*4];
+                }
+                finally
+                {
+                    bitmap.UnlockBits(bitmapData);
+                }
+                return image;
+            }
+        }
+    }
+}
