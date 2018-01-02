@@ -18,7 +18,7 @@ namespace demo.demos
 {
     public class Gaussianblur
     {
-        private int[] dstBytes;
+        private char[] dstBytes;
         private float[] _matrix;
         public float Variance { get; }
         public int Radius { get; }
@@ -121,7 +121,7 @@ namespace demo.demos
             //储存计算结果的数组
            
             //创建的核心代码函数以这种方式来传参
-            var resultBuffer=new ComputeBuffer<int>(context,ComputeMemoryFlags.WriteOnly, dstBytes.Length);
+            var resultBuffer=new ComputeBuffer<char>(context,ComputeMemoryFlags.WriteOnly, dstBytes.Length);
             kernel.SetMemoryArgument(0, images);
             kernel.SetMemoryArgument(1, resultBuffer);
             kernel.SetMemoryArgument(2, new ComputeBuffer<float>(context,ComputeMemoryFlags.ReadOnly|ComputeMemoryFlags.CopyHostPointer,_matrix));
@@ -132,21 +132,15 @@ namespace demo.demos
             var climg = images;
 
             //执行代码
-            long rank = climg.Width*climg.Height;
             commands.Execute(kernel, null, new long[] {climg.Width, climg.Height}, null, null);
            
             //read data
-            
-            int[] resultArray = new int[dstBytes.Length];
+            char[] resultArray = new char[dstBytes.Length];
             var arrHandle = GCHandle.Alloc(resultArray, GCHandleType.Pinned);
             commands.Read(resultBuffer, true, 0, dstBytes.Length, arrHandle.AddrOfPinnedObject(), null);
             //commands.ReadFromImage(images.Item2, processeddata.Scan0, true, null);
-            var bytes = new byte[resultArray.Length];
-            for (int i = 0; i < resultArray.Length; i++)
-            {
-                bytes[i] = (byte)resultArray[i];
-            }
-            var resultHandle = GCHandle.Alloc(bytes, GCHandleType.Pinned);
+
+            var resultHandle = GCHandle.Alloc(resultArray, GCHandleType.Pinned);
             var bmp=new Bitmap(climg.Width,climg.Height, climg.Width*4, PixelFormat.Format32bppArgb, resultHandle.AddrOfPinnedObject());
             var elapsed = sw.Elapsed;
             Console.WriteLine($"耗时: {elapsed.TotalMilliseconds} ms\n");
@@ -215,7 +209,7 @@ namespace demo.demos
                 {
                     image = new ComputeImage2D(ctx, flags, format, bitmapData.Width, bitmapData.Height,
                         bitmapData.Stride, bitmapData.Scan0);
-                    dstBytes = new int[bitmapData.Width*bitmapData.Height*4];
+                    dstBytes = new char[bitmapData.Width*bitmapData.Height*4];
                 }
                 finally
                 {

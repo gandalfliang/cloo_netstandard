@@ -11,7 +11,7 @@ const sampler_t sampler_img=CLK_NORMALIZED_COORDS_FALSE|CLK_ADDRESS_CLAMP_TO_EDG
 
 kernel void gaussian_blur(
     read_only image2d_t src,
-    global write_only int* dst,
+    global write_only char* dst,
     global read_only float* matrix,
     read_only int radius,
 	read_only int width)
