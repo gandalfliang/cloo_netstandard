@@ -62,6 +62,6 @@ kernel void gaussian_blur_img(
 		sumA+=rgba.w*matrix[i];
     }
 
-	write_imageui(dst,(int2)(x,y),(int4)(sumR,sumG,sumB,sumA));
+	write_imageui(dst,(int2)(x,y),(uint4)(sumR,sumG,sumB,sumA));
 }
 
