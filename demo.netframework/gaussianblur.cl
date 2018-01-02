@@ -21,7 +21,7 @@ kernel void gaussian_blur(
 
     float sumR,sumG,sumB,sumA;
     int matrixWidth=radius*2+1;
-    int matrix_size=pow(matrixWidth,2);//which should be the size fo matrix
+    int matrix_size=pow((float)matrixWidth,2.0f);//which should be the size fo matrix
     for(int i=0;i<matrix_size;i++)
     {
         int2 pix=transform_pos(x,y,matrixWidth,radius,i);
@@ -39,29 +39,5 @@ kernel void gaussian_blur(
 	dst[loc+3]=sumA;
 }
 
-kernel void gaussian_blur_img(
-    read_only image2d_t src,
-    write_only image2d_t dst,
-    global read_only float* matrix,
-    read_only int radius,
-	read_only int width)
-{
-    int x=get_global_id(0);
-    int y=get_global_id(1);
 
-    float sumR,sumG,sumB,sumA;
-    int matrixWidth=radius*2+1;
-    int matrix_size=pow(matrixWidth,2);//which should be the size fo matrix
-    for(int i=0;i<matrix_size;i++)
-    {
-        int2 pix=transform_pos(x,y,matrixWidth,radius,i);
-        uint4 rgba = read_imageui(src,sampler_img,pix);
-        sumR+=rgba.x*matrix[i];
-        sumG+=rgba.y*matrix[i];
-        sumB+=rgba.z*matrix[i];
-		sumA+=rgba.w*matrix[i];
-    }
-
-	write_imageui(dst,(int2)(x,y),(uint4)(sumR,sumG,sumB,sumA));
-}
 
