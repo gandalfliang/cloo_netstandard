@@ -7,7 +7,7 @@ namespace demo.netframework
     {
         static void Main(string[] args)
         {
-            var gau = new Gaussianblur(2.5f, 5);
+            var gau = new Gaussianblur(2.5f, 20);
 
             DirectoryInfo dir =new DirectoryInfo(@"C:\Users\ganda\Pictures\testimages\");
             foreach (var fileInfo in dir.EnumerateFiles())
