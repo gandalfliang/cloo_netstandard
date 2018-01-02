@@ -147,6 +147,7 @@ namespace demo.demos
             kernel.Dispose();
 
             bmp.Save("processed_cl.bmp");
+            arrHandle.Free();
         }
 
         private Point transform_pos(int centerX, int centerY, int matrixWidth, int bmpWidth,int bmpHeight,int radius, int index)
