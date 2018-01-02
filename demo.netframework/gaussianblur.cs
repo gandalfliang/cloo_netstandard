@@ -35,10 +35,11 @@ namespace demo.demos
             ComputeWeightMatrix();
         }
 
-        public void Compute(string imageFile)
+        public void Compute(string imageFile,string dst)
         {
             using (var bitmap = new Bitmap(imageFile))
             {
+                Console.WriteLine($"处理图片尺寸：{bitmap.Width}*{bitmap.Height}");
                 var datas = bitmap.LockBits(new Rectangle(new Point(), new Size(bitmap.Width, bitmap.Height)),ImageLockMode.ReadOnly,bitmap.PixelFormat);
                 var dataSize = datas.Stride * datas.Height;
                 var argbs = new byte[dataSize];
@@ -74,21 +75,21 @@ namespace demo.demos
                 bitmap.UnlockBits(datas);
 
                 var elapse = sw.Elapsed;
-                Console.WriteLine($"Costing: {elapse}");
+                Console.WriteLine($"常规方法耗时: {elapse.TotalMilliseconds} ms");
                 Debug.WriteLine($"Costing: {elapse}");
 
                 var handle = GCHandle.Alloc(dsts, GCHandleType.Pinned);
                 using (var dstBmp = new Bitmap(datas.Width, datas.Height, datas.Stride, bitmap.PixelFormat,
                     handle.AddrOfPinnedObject()))
                 {
-                    dstBmp.Save("processed_normal.bmp");
+                    dstBmp.Save(dst);
                 }
 
                 handle.Free();
             }
         }
 
-        public void Compute_cl(string imageFile)
+        public void Compute_cl(string imageFile,string dst)
         {
             //选取设备
             var platform = ComputePlatform.Platforms.FirstOrDefault();
@@ -127,9 +128,10 @@ namespace demo.demos
             kernel.SetMemoryArgument(2, new ComputeBuffer<float>(context,ComputeMemoryFlags.ReadOnly|ComputeMemoryFlags.CopyHostPointer,_matrix));
             kernel.SetValueArgument(3, Radius);
             kernel.SetValueArgument(4, (int)images.Width);
-            Console.WriteLine($"运行平台: {platform.Name}\n运行设备： {device.Name}\n");
+            Console.WriteLine($"\n运行平台: {platform.Name}\n运行设备： {device.Name}");
             Stopwatch sw = Stopwatch.StartNew();
             var climg = images;
+            Console.WriteLine($"处理图片尺寸：{climg.Width}*{climg.Height}");
 
             //执行代码
             commands.Execute(kernel, null, new long[] {climg.Width, climg.Height}, null, null);
@@ -143,10 +145,10 @@ namespace demo.demos
             var resultHandle = GCHandle.Alloc(resultArray, GCHandleType.Pinned);
             var bmp=new Bitmap(climg.Width,climg.Height, climg.Width*4, PixelFormat.Format32bppArgb, resultHandle.AddrOfPinnedObject());
             var elapsed = sw.Elapsed;
-            Console.WriteLine($"耗时: {elapsed.TotalMilliseconds} ms\n");
+            Console.WriteLine($"OpenCL处理耗时: {elapsed.TotalMilliseconds} ms\n");
             kernel.Dispose();
 
-            bmp.Save("processed_cl.bmp");
+            bmp.Save(dst);
             arrHandle.Free();
         }
 
