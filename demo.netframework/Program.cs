@@ -11,8 +11,10 @@ namespace demo.netframework
     {
         static void Main(string[] args)
         {
-            var gau = new Gaussianblur(10.5f, 10);
-            gau.Compute_cl(@"C:\Users\ganda\Pictures\Screenshots\屏幕截图(1).png");
+            var src = @"C:\Users\ganda\Pictures\temp.png";
+            var gau = new Gaussianblur(2.5f, 5);
+            gau.Compute_cl(src);
+            gau.Compute(src);
         }
     }
 }

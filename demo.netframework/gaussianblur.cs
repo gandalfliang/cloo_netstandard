@@ -37,6 +37,55 @@ namespace demo.demos
 
         public void Compute(string imageFile)
         {
+            using (var bitmap = new Bitmap(imageFile))
+            {
+                var datas = bitmap.LockBits(new Rectangle(new Point(), new Size(bitmap.Width, bitmap.Height)),ImageLockMode.ReadOnly,bitmap.PixelFormat);
+                var dataSize = datas.Stride * datas.Height;
+                var argbs = new byte[dataSize];
+                var dsts = new byte[dataSize];
+                int matrixWidth = Radius * 2 + 1;
+                Marshal.Copy(datas.Scan0, argbs, 0, dataSize);
+
+                Stopwatch sw=Stopwatch.StartNew();
+                for (int y = 0; y < bitmap.Height; y++)
+                {
+                    for (int x = 0; x < bitmap.Width; x++)
+                    {
+                        float sumA = 0;
+                        float sumR = 0;
+                        float sumG = 0;
+                        float sumB=0;
+                        for (int i = 0; i < _matrix.Length; i++)
+                        {
+                            var pos = transform_pos(x, y, matrixWidth, bitmap.Width, bitmap.Height, Radius, i);
+                            var position = pos.Y * datas.Stride + pos.X*4;
+                            sumR += argbs[position] * _matrix[i];
+                            sumG += argbs[position + 1] * _matrix[i];
+                            sumB += argbs[position + 2] * _matrix[i];
+                            sumA += argbs[position + 3] * _matrix[i];
+                        }
+                        var dstPos = y * datas.Stride + x * 4;
+                        dsts[dstPos] = (byte)sumR;
+                        dsts[dstPos+1] = (byte)sumG;
+                        dsts[dstPos+2] = (byte)sumB;
+                        dsts[dstPos+3] = (byte)sumA;
+                    }
+                }
+                bitmap.UnlockBits(datas);
+
+                var elapse = sw.Elapsed;
+                Console.WriteLine($"Costing: {elapse}");
+                Debug.WriteLine($"Costing: {elapse}");
+
+                var handle = GCHandle.Alloc(dsts, GCHandleType.Pinned);
+                using (var dstBmp = new Bitmap(datas.Width, datas.Height, datas.Stride, bitmap.PixelFormat,
+                    handle.AddrOfPinnedObject()))
+                {
+                    dstBmp.Save("processed_normal.bmp");
+                }
+
+                handle.Free();
+            }
         }
 
         public void Compute_cl(string imageFile)
@@ -103,7 +152,20 @@ namespace demo.demos
             Console.WriteLine($"耗时: {elapsed.TotalMilliseconds} ms\n");
             kernel.Dispose();
 
-            bmp.Save("prcessed.bmp");
+            bmp.Save("processed_cl.bmp");
+        }
+
+        private Point transform_pos(int centerX, int centerY, int matrixWidth, int bmpWidth,int bmpHeight,int radius, int index)
+        {
+            int x = index % matrixWidth;
+            int offsetX = x - (radius + 1);
+            int y = index / matrixWidth;
+            int offsetY = radius - y;
+            int newX = centerX + offsetX;
+            int newY = centerY - offsetY;
+            newX = newX < 0 ? 0 : newX > bmpWidth-1 ? bmpWidth-1 : newX;
+            newY = newY < 0 ? 0 : newY > bmpHeight-1 ? bmpHeight-1 : newY;
+            return new Point(newX,newY);
         }
 
         private void ComputeWeightMatrix()
@@ -149,7 +211,6 @@ namespace demo.demos
                 ComputeImageFormat format = new ComputeImageFormat(ComputeImageChannelOrder.Rgba, ComputeImageChannelType.UnsignedInt8);
                 BitmapData bitmapData = bitmap.LockBits(new Rectangle(new Point(), bitmap.Size), ImageLockMode.ReadWrite, bitmap.PixelFormat);
                 ComputeImage2D image;
-                ComputeImage2D dst;
                 try
                 {
                     image = new ComputeImage2D(ctx, flags, format, bitmapData.Width, bitmapData.Height,
