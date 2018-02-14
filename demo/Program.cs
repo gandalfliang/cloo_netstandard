@@ -25,6 +25,7 @@ namespace demo
             matrixmul.RegularMul();
             matrixmul.OpenClMul();
             System.Console.WriteLine("done");
+
         }
     }
 }

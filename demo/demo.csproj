@@ -5,6 +5,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="demos\cls\gaussianblur.cl">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="demos\cls\matrix_mul.cl">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

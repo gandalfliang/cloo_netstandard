@@ -241,6 +241,22 @@ namespace Cloo
             buildNotify = notify;
 
             ComputeErrorCode error = CL12.BuildProgram(Handle, handleCount, deviceHandles, options, buildNotify, notifyDataPtr);
+
+#if DEBUG
+            if (error != ComputeErrorCode.Success)
+            {
+                string str = String.Empty;
+                var ptr = Marshal.StringToHGlobalAnsi(str);
+                IntPtr size = IntPtr.Zero;
+
+                var errorCode = CL12.GetProgramBuildInfo(Handle, deviceHandles[0], ComputeProgramBuildInfo.BuildLog,
+                    new IntPtr(4096), ptr,
+                    out size);
+                if (errorCode == ComputeErrorCode.Success)
+                    Debug.WriteLine($"Build Error:{Marshal.PtrToStringAnsi(ptr, (int) size)}");
+            }
+#endif
+
             ComputeException.ThrowOnError(error);
         }
 
